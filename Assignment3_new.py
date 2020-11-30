@@ -9,69 +9,10 @@ import time
 
 freebird_path = "/home/tuomas/Python/DATA.ML.200/DATA.ML.200_Assignment2_Data/ff1010bird_train/wav/"
 warbird_path = "/home/tuomas/Python/DATA.ML.200/DATA.ML.200_Assignment2_Data/warblrb10k_public_train/wav/"
-#%%
-
-spectrograms = []
-start = time.time()
-i = 0
-for path in [freebird_path]:
-    for file in os.listdir(path):
-        if file.split(".")[1] != "wav":
-            continue
-        filepath = path + "/" + file
-        audio_data  = librosa.load(filepath, res_type='kaiser_best', sr=44100)[0]
-        i+=1
-        #audio_data = audio_data * 1/np.max(np.abs(audio_data))
-        kwargs_for_mel = {'n_mels': 40}
-        spectrogram = librosa.feature.melspectrogram(y=audio_data,
-                                               sr=44100, 
-                                               n_fft=1024, 
-                                               hop_length=512, 
-                                               power=1.,
-                                               **kwargs_for_mel) 
-        spectrograms.append(spectrogram)
-        if i in np.arange(0, 20000, 500):
-            print(i)
-        
-    
-
-print(f"Time for reading the data: {((time.time()-start)):.2f} s")
-np.save("freefield1010-spectrograms", spectrograms)
-
-
-#%% Get test data
-start = time.time()
-kwargs_for_mel = {'n_mels': 40}
-#direc = "C:/Users/joona/OneDrive - TUNI.fi/PRML/Assignments/DATA.ML.200_Assignment2/"
-direc = "/home/tuomas/Python/DATA.ML.200/DATA.ML.200_Assignment2_Data/"
-spectrograms_test = []
-i=0
-for file in os.listdir(direc+"/test"):
-    if file.split(".")[1] != "npy":
-        continue
-    filepath = direc + "test/" + file
-    audio_data  = np.load(filepath)
-    audio_data = librosa.resample(audio_data, 48000, 44100)
-    #audio_data = audio_data * 1/np.max(np.abs(audio_data))
-    kwargs_for_mel = {'n_mels': 40}
-    spectrogram = librosa.feature.melspectrogram(y=audio_data,
-                                           sr=44100, 
-                                           n_fft=1024, 
-                                           hop_length=512, 
-                                           power=1.,
-                                           **kwargs_for_mel) 
-    spectrograms_test.append(spectrogram)
-    i+=1
-    if i in np.arange(0, 20000, 500):
-        print(i)
-    
-print(f"Time for reading the data: {((time.time()-start)):.2f} s")
-np.save("test-spectrograms", spectrograms_test)
-
 
 #%%
 #direc = "C:/Users/joona/OneDrive - TUNI.fi/PRML/Assignments/DATA.ML.200_Assignment2/"
-direc = "/home/tuomas/Python/DATA.ML.200/Assignment2_data"
+direc = "/home/tuomas/Python/DATA.ML.200/Assignment2_data/"
 y = np.load(direc+"freefield1010-labels.npy").astype(int)
 X = np.swapaxes(np.load(direc+"freefield1010-spectrograms.npy"), 1, 2)[..., np.newaxis]
 
@@ -91,8 +32,6 @@ validX, testX, validY_input, testY_input = train_test_split(validX,
                                                             test_size=0.33,
                                                             random_state=1,
                                                             stratify=validY_input)
-
-
 #%%
 import tensorflow as tf
 from tensorflow.keras.models import Sequential
@@ -140,6 +79,7 @@ model.add(Dense(96, activation='relu'))
 model.add(BatchNormalization())
 model.add(Dropout(dropout_rate))
 model.add(Dense(1, activation='sigmoid'))
+
 #%% Compile model
 
 epochs = 100
@@ -153,7 +93,6 @@ callback = EarlyStopping(monitor='val_auc', patience=10,
                          restore_best_weights=True, mode="max")
 model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['AUC', 'accuracy'])
 
-
 #%% Without data augmentation
 history = model.fit(trainX, trainY_input, 
                     epochs=epochs, 
@@ -163,3 +102,4 @@ history = model.fit(trainX, trainY_input,
                     verbose=2)
 
 print("Finished")
+
